@@ -33,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
           </h3>
           <div className={`text-xs px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${
             isLowStock 
-              ? 'bg-amber-100 text-amber-800' 
+              ? 'bg-am  ber-100 text-amber-800' 
               : 'bg-green-100 text-green-800'
           }`}>
             {product.stock}
