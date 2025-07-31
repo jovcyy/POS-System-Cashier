@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Minus, Plus, Trash2, ShoppingCart as CartIcon } from 'lucide-react';
 import { CartItem } from '../types';
+
+interface Promo {
+  code: string;
+  label: string;
+  discountPercent: number; // e.g., 10 for 10%
+}
 
 interface ShoppingCartProps {
   items: CartItem[];
@@ -9,16 +15,30 @@ interface ShoppingCartProps {
   onCheckout: () => void;
 }
 
+const PROMOS: Promo[] = [
+  { code: 'NONE', label: 'No Promo', discountPercent: 0 },
+  { code: 'WELCOME10', label: 'Welcome 10% Off', discountPercent: 10 },
+  { code: 'SAVE20', label: 'Save 20%', discountPercent: 20 },
+];
+
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   items,
   onUpdateQuantity,
   onRemoveItem,
   onCheckout
 }) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const taxRate = 0.08; // 8% tax
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  const [selectedPromo, setSelectedPromo] = useState<Promo>(PROMOS[0]);
+
+  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const discount = (subtotal * selectedPromo.discountPercent) / 100;
+  const taxRate = 0.08;
+  const tax = (subtotal - discount) * taxRate;
+  const total = subtotal - discount + tax;
+
+  const handlePromoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const promo = PROMOS.find(p => p.code === e.target.value);
+    if (promo) setSelectedPromo(promo);
+  };
 
   if (items.length === 0) {
     return (
@@ -63,12 +83,12 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-gray-900 truncate">{item.product.name}</h3>
               <p className="text-sm text-gray-500">₱{item.product.price.toFixed(2)} each</p>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onUpdateQuantity(item.product.id, Math.max(0, item.quantity - 1))}
@@ -76,9 +96,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               >
                 <Minus className="w-4 h-4" />
               </button>
-              
+
               <span className="w-8 text-center font-medium">{item.quantity}</span>
-              
+
               <button
                 onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
                 className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -86,7 +106,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="text-right">
               <p className="font-bold text-gray-900">
                 ₱{(item.product.price * item.quantity).toFixed(2)}
@@ -102,11 +122,15 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         ))}
       </div>
 
-      <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-        <div className="space-y-2 mb-4">
+      <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl space-y-4">
+        <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal:</span>
             <span className="font-medium">₱{subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Promo Discount ({selectedPromo.discountPercent}%):</span>
+            <span className="font-medium text-green-600">-₱{discount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Tax (8%):</span>
@@ -117,7 +141,23 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
             <span>₱{total.toFixed(2)}</span>
           </div>
         </div>
-        
+
+        <div>
+          <label htmlFor="promo" className="block text-sm font-medium text-gray-700 mb-1">Choose Promo</label>
+          <select
+            id="promo"
+            value={selectedPromo.code}
+            onChange={handlePromoChange}
+            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            {PROMOS.map(promo => (
+              <option key={promo.code} value={promo.code}>
+                {promo.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           onClick={onCheckout}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-150"
