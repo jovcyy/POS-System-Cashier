@@ -7,42 +7,31 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onTransactionHistoryClick }) => {
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Store className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Afflatus Food Services</h1>
-              <p className="text-xs text-gray-500">Cashier Terminal</p>
-            </div>
+    <header className="bg-[#1F2937] text-white shadow-lg">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Left: Logo and Title */}
+          <div className="flex items-center">
+            <Store className="h-8 w-8 mr-3" style={{ color: '#38b6ff' }} />
+            <h1 className="text-xl font-bold">Afflatus POS</h1>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">Sarah Johnson</p>
-              <p className="text-xs text-gray-500">Cashier #001</p>
+          {/* Right: Cashier Info, Settings, Sign Out */}
+          <div className="flex items-center space-x-4">
+            <div className="flex flex-col items-end mr-2">
+              <span className="text-sm">Sarah Johnson</span>
+              <span className="text-xs text-gray-300">Cashier #001</span>
             </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={onTransactionHistoryClick}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Transaction History"
-              >
-                <Receipt className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
+            <button className="p-2 rounded hover:bg-gray-700 transition-colors" title="Settings">
+              <Settings className="w-5 h-5 text-white" />
+            </button>
+            <button
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-[#E5E7EB] hover:bg-red-700 transition-colors"
+            >
+              <span className="text-sm text-black">Sign Out</span>
+            </button>
           </div>
         </div>
       </div>
-    </header>
-  );
+  </header>
+      );
 };
