@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, User, Settings, Receipt } from 'lucide-react';
+import { Store, Receipt } from 'lucide-react';
 
 interface HeaderProps {
   onTransactionHistoryClick: () => void;
@@ -29,12 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onTransactionHistoryClick }) => 
               >
                 <Receipt className="w-5 h-5" />
               </button>
-              <button className="p-2 text-gray-300 hover:text-white transition-colors" title="Settings">
-                <Settings className="w-5 h-5" />
-              </button>
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-600" />
-              </div>
+          
               <button
                 className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-[#E5E7EB] hover:bg-red-700 transition-colors"
               >
