@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Minus, Plus, Trash2, ShoppingCart as CartIcon } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Minus, Plus, Trash2, ShoppingCart as CartIcon, Check, Gift } from 'lucide-react';
 import { CartItem } from '../types';
 
 interface Promo {
@@ -21,6 +21,89 @@ const PROMOS: Promo[] = [
   { code: 'SAVE20', label: 'Save 20%', discountPercent: 20 },
 ];
 
+// --- PromoDropdown component, now inside this file ---
+interface PromoDropdownProps {
+  promos: Promo[];
+  selected: Promo;
+  onChange: (promo: Promo) => void;
+}
+
+const PromoDropdown: React.FC<PromoDropdownProps> = ({
+  promos,
+  selected,
+  onChange,
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        className="w-full px-4 py-2 border border-gray-300 bg-white rounded-md shadow-sm flex items-center justify-between gap-3 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2">
+          <Gift className="w-4 h-4 text-blue-500" />
+          <span>{selected.label}</span>
+          {selected.discountPercent > 0 && (
+            <span className="ml-2 text-green-600 text-xs font-semibold bg-green-100 rounded-full px-2 py-0.5">
+              -{selected.discountPercent}%
+            </span>
+          )}
+        </span>
+        <svg className={`w-4 h-4 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <ul
+          className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+          role="listbox"
+        >
+          {promos.map((promo) => (
+            <li
+              key={promo.code}
+              className={`flex items-center px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                promo.code === selected.code ? 'bg-blue-100 font-semibold' : ''
+              }`}
+              onClick={() => {
+                onChange(promo);
+                setOpen(false);
+              }}
+              role="option"
+              aria-selected={promo.code === selected.code}
+            >
+              <Gift className="w-4 h-4 text-blue-500 mr-2" />
+              <span>{promo.label}</span>
+              {promo.discountPercent > 0 && (
+                <span className="ml-2 text-green-600 text-xs font-semibold bg-green-100 rounded-full px-2 py-0.5">
+                  -{promo.discountPercent}%
+                </span>
+              )}
+              {promo.code === selected.code && (
+                <Check className="w-4 h-4 text-blue-700 ml-auto" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+// --- end PromoDropdown ---
+
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   items,
   onUpdateQuantity,
@@ -31,14 +114,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const discount = (subtotal * selectedPromo.discountPercent) / 100;
-  const taxRate = 0.08;
+  const taxRate = 0.12; // 12% tax rate
   const tax = (subtotal - discount) * taxRate;
   const total = subtotal - discount + tax;
-
-  const handlePromoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const promo = PROMOS.find(p => p.code === e.target.value);
-    if (promo) setSelectedPromo(promo);
-  };
 
   if (items.length === 0) {
     return (
@@ -133,7 +211,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
             <span className="font-medium text-green-600">-₱{discount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tax (8%):</span>
+            <span className="text-gray-600">Tax (12%):</span>
             <span className="font-medium">₱{tax.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold border-t border-gray-300 pt-2">
@@ -143,19 +221,12 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         </div>
 
         <div>
-          <label htmlFor="promo" className="block text-sm font-medium text-gray-700 mb-1">Choose Promo</label>
-          <select
-            id="promo"
-            value={selectedPromo.code}
-            onChange={handlePromoChange}
-            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
-            {PROMOS.map(promo => (
-              <option key={promo.code} value={promo.code}>
-                {promo.label}
-              </option>
-            ))}
-          </select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Choose Promo</label>
+          <PromoDropdown
+            promos={PROMOS}
+            selected={selectedPromo}
+            onChange={setSelectedPromo}
+          />
         </div>
 
         <button
