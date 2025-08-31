@@ -1,5 +1,13 @@
-import React from 'react';
-import { Search, Scan } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
+import { 
+  Branch,
+  Brand,
+  BranchBrand,
+  getBranches,
+  getBrands,
+  getBranchBrands
+ } from '../api/staticAPI';
 
 interface ProductSearchProps {
   searchTerm: string;
@@ -7,9 +15,8 @@ interface ProductSearchProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   categories: string[];
-  onBarcodeScan: () => void;
-  selectedBusiness: string;
-  onBusinessChange: (business: string) => void;
+  selectedBusiness: number;
+  onBusinessChange: (business: number) => void;
 }
 
 export const ProductSearch: React.FC<ProductSearchProps> = ({
@@ -18,11 +25,26 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   selectedCategory,
   onCategoryChange,
   categories,
-  onBarcodeScan,
   selectedBusiness,
   onBusinessChange
 }) => {
-  const businesses = ['Bang Bang Bangus', 'Carneighbor', 'Cuptolyo'];
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [bb, setBB] = useState<BranchBrand[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const [branchRes, brandsRes, bbRes] = await Promise.all([
+        getBranches(),
+        getBrands(),
+        getBranchBrands(),
+      ])
+      setBranches(branchRes);
+      setBrands(brandsRes);
+      setBB(bbRes);
+    }
+    loadData();
+  })
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -38,14 +60,6 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           />
         </div>
-
-        <button
-          onClick={onBarcodeScan}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-150 flex items-center gap-2"
-        >
-          <Scan className="w-5 h-5" />
-          Scan
-        </button>
       </div>
 
       {/* Business Dropdown */}
@@ -53,15 +67,20 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-2">Select Business</label>
         <select
           value={selectedBusiness}
-          onChange={(e) => onBusinessChange(e.target.value)}
+          onChange={(e) => onBusinessChange(Number(e.target.value))}
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         >
-          <option value="" disabled>Select a business</option>
-          {businesses.map((biz) => (
-            <option key={biz} value={biz}>
-              {biz}
-            </option>
-          ))}
+          <option value={0}>Select a business</option>
+          {bb.map((item) => {
+            const branchName = branches.find((b) => b.id === item.branch_id)?.branch_name || `Branch ${item.branch_id}`
+            const brandName = brands.find((br) => br.id === item.brand_id)?.brand_name || `Brand ${item.brand_id}`
+                    
+            return (
+              <option key={item.id} value={item.id}>
+                {branchName} - {brandName}
+              </option>
+            )
+          })}
         </select>
       </div>
 

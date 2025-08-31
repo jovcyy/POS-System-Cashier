@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Package } from 'lucide-react';
-import { Product } from '../types';
+import { Product } from '../api/productAPI';
 
 interface ProductCardProps {
   product: Product;
@@ -8,15 +8,13 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
-  const isLowStock = product.stock < 10;
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
       <div className="aspect-square overflow-hidden bg-gray-100">
-        {product.image ? (
+        {product.picture ? (
           <img
-            src={product.image}
-            alt={product.name}
+            src={`http://localhost:5000/product_image/${product?.picture}`}
+            alt={product.product_name}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -29,10 +27,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
       <div className="p-3">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold text-gray-900 text-xs leading-tight line-clamp-2 flex-1 mr-2">
-            {product.name}
+            {product.product_name}
           </h3>
           <div className={`text-xs px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${
-            isLowStock 
+            product.alert_at > product.stock 
               ? 'bg-am  ber-100 text-amber-800' 
               : 'bg-green-100 text-green-800'
           }`}>

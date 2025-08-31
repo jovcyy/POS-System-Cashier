@@ -6,6 +6,10 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onTransactionHistoryClick }) => {
+  const handleSignOut = () => {
+    window.location.replace("http://localhost:5173/");
+  }
+
   return (
     <header className="bg-[#1F2937] text-white shadow-lg">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ onTransactionHistoryClick }) => 
           
               <button
                 className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-[#E5E7EB] hover:bg-red-700 transition-colors"
+                onClick={() => handleSignOut()}
               >
                 <span className="text-sm text-black">Sign Out</span>
               </button>

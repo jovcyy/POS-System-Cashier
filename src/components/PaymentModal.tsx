@@ -1,30 +1,56 @@
 import React, { useState } from 'react';
 import { X, Banknote, Smartphone, Check } from 'lucide-react';
-// You can replace this with a real QR code image or a QR code generator
-const GCASH_QR_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=GCASH-1234567890';
 import { CartItem } from '../types';
+import { Promotion } from '../api/promotionsAPI';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  items: CartItem[];
-  total: number;
-  onPaymentComplete: (paymentMethod: 'cash' | 'digital') => void;
+  checkoutData: {
+    items: CartItem[];
+    subtotal: number;
+    discount: number;
+    tax: number;
+    total: number;
+    promo: Promotion | null;
+    bogoFreeItemId: number | null;
+  } | null;
+  onPaymentComplete: (payment: { method: 'cash' | 'digital'; refNumber?: string }) => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
-  items,
-  total,
+  checkoutData,
   onPaymentComplete
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'digital'>('cash');
+  const [digitalAmount, setDigitalAmount] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [cashAmount, setCashAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !checkoutData) return null;
+
+  const { items, total, promo, bogoFreeItemId } = checkoutData;
+
+  // Debug logging - Remove these after debugging
+  console.log('=== PaymentModal Debug ===');
+  console.log('checkoutData:', checkoutData);
+  console.log('promo:', promo);
+  console.log('promo type:', promo?.type);
+  console.log('bogoFreeItemId:', bogoFreeItemId);
+  console.log('items in cart:', items);
+
+  // Find the free item for BOGO display
+  // We'll show it separately even if it's already in the cart
+  const freeItem = bogoFreeItemId 
+    ? items.find(item => item.product.id === bogoFreeItemId)?.product
+    : null;
+
+  console.log('freeItem found:', freeItem);
+  console.log('Should show BOGO?', promo?.type === 'bogo' && bogoFreeItemId && freeItem);
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -33,14 +59,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setIsComplete(true);
 
     setTimeout(() => {
-      onPaymentComplete(selectedMethod);
+      onPaymentComplete({
+        method: selectedMethod,
+        refNumber: selectedMethod === 'digital' ? referenceNumber : undefined
+      });
       setIsComplete(false);
       setCashAmount('');
+      setDigitalAmount('');
+      setReferenceNumber('');
     }, 1500);
   };
 
-  const cashChange = cashAmount ? Math.max(0, parseFloat(cashAmount) - total) : 0;
-  const canProcessPayment = selectedMethod !== 'cash' || (cashAmount && parseFloat(cashAmount) >= total);
+  const paymentAmount =
+    selectedMethod === 'cash' ? parseFloat(cashAmount || '0') :
+    selectedMethod === 'digital' ? parseFloat(digitalAmount || '0') : 0;
+
+  const changeDue = Math.max(0, paymentAmount - total);
+
+  const canProcessPayment =
+    (selectedMethod === 'cash' && cashAmount && parseFloat(cashAmount) >= total) ||
+    (selectedMethod === 'digital' && digitalAmount && parseFloat(digitalAmount) >= total && referenceNumber.trim() !== '');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -75,20 +113,69 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <h3 className="font-semibold text-gray-900 mb-2">Order Summary</h3>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="space-y-2">
-                    {items.slice(0, 3).map((item) => (
-                      <div key={item.product.id} className="flex justify-between text-sm">
-                        <span>{item.product.name} x{item.quantity}</span>
-                        <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {items.length > 3 && (
-                      <div className="text-sm text-gray-500">
-                        +{items.length - 3} more items
+                    <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
+                      {/* Regular Items */}
+                      {items.map((item) => (
+                        <div key={item.product.id} className="flex justify-between text-sm">
+                          <span>{item.product.product_name} × {item.quantity}</span>
+                          <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+
+                      {/* Show BOGO Free Item - Always show separately */}
+                      {promo?.type === 'bogo' && bogoFreeItemId && freeItem && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>{freeItem.product_name} (Free) × 1</span>
+                          <span>₱0.00</span>
+                        </div>
+                      )}
+
+                      {/* Debug: Show if BOGO should appear but doesn't */}
+                      {promo?.type === 'bogo' && bogoFreeItemId && !freeItem && (
+                        <div className="flex justify-between text-sm text-red-500">
+                          <span>DEBUG: Free item not found (ID: {bogoFreeItemId})</span>
+                          <span>₱0.00</span>
+                        </div>
+                      )}
+
+                      {/* Show applied promotion */}
+                      {promo && (
+                        <div className="pt-2 border-t border-gray-200">
+                          <div className="flex justify-between text-sm text-blue-600">
+                            <span className="flex items-center gap-1">
+                              🏷️ {promo.name}
+                            </span>
+                            <span className="font-medium">
+                              {promo.type === 'bogo' 
+                                ? 'BOGO Applied' 
+                                : promo.type === 'percentage' 
+                                ? `-${promo.value}%` 
+                                : `-₱${promo.value.toFixed(2)}`
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Totals */}
+                  <div className="border-t border-gray-200 pt-2 mt-2 space-y-1">
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Subtotal</span>
+                      <span>₱{checkoutData.subtotal.toFixed(2)}</span>
+                    </div>
+                    {checkoutData.discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Discount</span>
+                        <span>-₱{checkoutData.discount.toFixed(2)}</span>
                       </div>
                     )}
-                  </div>
-                  <div className="border-t border-gray-200 pt-2 mt-2">
-                    <div className="flex justify-between font-bold">
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Tax (12%)</span>
+                      <span>₱{checkoutData.tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg pt-1 border-t border-gray-300">
                       <span>Total</span>
                       <span>₱{total.toFixed(2)}</span>
                     </div>
@@ -140,22 +227,51 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     placeholder="0.00"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
-                  {cashChange > 0 && (
+                  {changeDue > 0 && (
                     <p className="text-sm text-green-600 mt-2 font-medium">
-                      Change due: ₱{cashChange.toFixed(2)}
+                      Change due: ₱{changeDue.toFixed(2)}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Gcash QR Code */}
+              {/* Digital Input */}
               {selectedMethod === 'digital' && (
-                <div className="mb-6 flex flex-col items-center">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Scan to pay with Gcash
+                <div className="mb-6 flex flex-col gap-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Amount Transferred
                   </label>
-                  <img src={GCASH_QR_URL} alt="Gcash QR Code" className="w-36 h-36 rounded-lg border" />
-                  <p className="text-xs text-gray-500 mt-2">Gcash Account: 1234 567 890</p>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={digitalAmount}
+                    onChange={(e) => setDigitalAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+
+                  <label className="block text-sm font-medium text-gray-700">
+                    Reference Number
+                  </label>
+                  <input
+                    type="text"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    placeholder="Enter reference number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+
+                  {digitalAmount && parseFloat(digitalAmount) < total && (
+                    <p className="text-sm text-red-600 font-medium">
+                      Amount is less than total
+                    </p>
+                  )}
+
+                  {changeDue > 0 && (
+                    <p className="text-sm text-green-600 mt-2 font-medium">
+                      Change due: ₱{changeDue.toFixed(2)}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

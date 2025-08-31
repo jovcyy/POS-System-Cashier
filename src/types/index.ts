@@ -1,13 +1,4 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  barcode: string;
-  stock: number;
-  image?: string;
-  business:string;
-}
+import { Product } from "../api/productAPI";
 
 export interface CartItem {
   product: Product;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Package } from 'lucide-react';
-import { Product } from '../types';
+import { Product } from '../api/productAPI';
 
 interface ProductCatalogProps {
   products: Product[];
@@ -17,8 +17,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 }) => {
   const filteredProducts = products.filter(
     (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.barcode.includes(searchTerm) ||
+      product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -48,7 +47,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             onClick={() => onAddToCart(product)}
           >
             <div className="flex flex-col">
-              <h3 className="font-medium text-gray-800 mb-1 text-sm">{product.name}</h3>
+              <h3 className="font-medium text-gray-800 mb-1 text-sm">{product.product_name}</h3>
               <p className="text-xs text-gray-500 mb-2">{product.category}</p>
               <p className="text-lg font-bold text-blue-600">₱{product.price.toFixed(2)}</p>
               <p className="text-xs text-gray-400 mt-1">Stock: {product.stock}</p>
