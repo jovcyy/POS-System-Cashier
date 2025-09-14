@@ -7,7 +7,7 @@ import {
   getBranches,
   getBrands,
   getBranchBrands
- } from '../api/staticAPI';
+} from '../api/staticAPI';
 
 interface ProductSearchProps {
   searchTerm: string;
@@ -17,6 +17,7 @@ interface ProductSearchProps {
   categories: string[];
   selectedBusiness: number;
   onBusinessChange: (business: number) => void;
+  profile: { branch_id: number }; // Profile prop to get the user's branch_id
 }
 
 export const ProductSearch: React.FC<ProductSearchProps> = ({
@@ -26,7 +27,8 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   onCategoryChange,
   categories,
   selectedBusiness,
-  onBusinessChange
+  onBusinessChange,
+  profile
 }) => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -38,13 +40,18 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
         getBranches(),
         getBrands(),
         getBranchBrands(),
-      ])
+      ]);
       setBranches(branchRes);
       setBrands(brandsRes);
       setBB(bbRes);
     }
     loadData();
-  })
+  }, []);
+
+  // Filter branch brands based on the user's branch_id
+  const filteredBranchBrands = bb.filter(
+    (branchBrand) => branchBrand.branch_id === profile.branch_id
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -71,15 +78,15 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         >
           <option value={0}>Select a business</option>
-          {bb.map((item) => {
-            const branchName = branches.find((b) => b.id === item.branch_id)?.branch_name || `Branch ${item.branch_id}`
-            const brandName = brands.find((br) => br.id === item.brand_id)?.brand_name || `Brand ${item.brand_id}`
+          {filteredBranchBrands.map((item) => {
+            const branchName = branches.find((b) => b.id === item.branch_id)?.branch_name || `Branch ${item.branch_id}`;
+            const brandName = brands.find((br) => br.id === item.brand_id)?.brand_name || `Brand ${item.brand_id}`;
                     
             return (
               <option key={item.id} value={item.id}>
                 {branchName} - {brandName}
               </option>
-            )
+            );
           })}
         </select>
       </div>

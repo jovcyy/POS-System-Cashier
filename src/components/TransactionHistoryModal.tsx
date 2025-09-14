@@ -21,7 +21,7 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
     return transactions.filter(transaction => {
       const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            transaction.items.some(item => 
-                             item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+                             item.product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
                            );
       
       const matchesPaymentMethod = selectedPaymentMethod === '' || 
@@ -185,10 +185,6 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                         <span className="text-gray-600">Subtotal: </span>
                         <span className="font-medium">₱{transaction.subtotal.toFixed(2)}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Tax: </span>
-                        <span className="font-medium">₱{transaction.tax.toFixed(2)}</span>
-                      </div>
                     </div>
                     
                     <div className="mt-2">
@@ -196,7 +192,7 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                       <div className="flex flex-wrap gap-1">
                         {transaction.items.slice(0, 3).map((item, index) => (
                           <span key={index} className="inline-block bg-white px-2 py-1 rounded text-xs">
-                            {item.product.name} x{item.quantity}
+                            {item.product.product_name} x {item.quantity}
                           </span>
                         ))}
                         {transaction.items.length > 3 && (

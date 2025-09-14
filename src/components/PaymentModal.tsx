@@ -10,7 +10,6 @@ interface PaymentModalProps {
     items: CartItem[];
     subtotal: number;
     discount: number;
-    tax: number;
     total: number;
     promo: Promotion | null;
     bogoFreeItemId: number | null;
@@ -35,22 +34,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const { items, total, promo, bogoFreeItemId } = checkoutData;
 
-  // Debug logging - Remove these after debugging
-  console.log('=== PaymentModal Debug ===');
-  console.log('checkoutData:', checkoutData);
-  console.log('promo:', promo);
-  console.log('promo type:', promo?.type);
-  console.log('bogoFreeItemId:', bogoFreeItemId);
-  console.log('items in cart:', items);
-
   // Find the free item for BOGO display
-  // We'll show it separately even if it's already in the cart
   const freeItem = bogoFreeItemId 
     ? items.find(item => item.product.id === bogoFreeItemId)?.product
     : null;
-
-  console.log('freeItem found:', freeItem);
-  console.log('Should show BOGO?', promo?.type === 'bogo' && bogoFreeItemId && freeItem);
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -130,14 +117,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         </div>
                       )}
 
-                      {/* Debug: Show if BOGO should appear but doesn't */}
-                      {promo?.type === 'bogo' && bogoFreeItemId && !freeItem && (
-                        <div className="flex justify-between text-sm text-red-500">
-                          <span>DEBUG: Free item not found (ID: {bogoFreeItemId})</span>
-                          <span>₱0.00</span>
-                        </div>
-                      )}
-
                       {/* Show applied promotion */}
                       {promo && (
                         <div className="pt-2 border-t border-gray-200">
@@ -150,7 +129,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                                 ? 'BOGO Applied' 
                                 : promo.type === 'percentage' 
                                 ? `-${promo.value}%` 
-                                : `-₱${promo.value.toFixed(2)}`
+                                : `-₱${promo.value.toFixed(2)}` 
                               }
                             </span>
                           </div>
@@ -158,7 +137,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Totals */}
                   <div className="border-t border-gray-200 pt-2 mt-2 space-y-1">
                     <div className="flex justify-between text-sm text-gray-600">
@@ -171,10 +150,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         <span>-₱{checkoutData.discount.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Tax (12%)</span>
-                      <span>₱{checkoutData.tax.toFixed(2)}</span>
-                    </div>
                     <div className="flex justify-between font-bold text-lg pt-1 border-t border-gray-300">
                       <span>Total</span>
                       <span>₱{total.toFixed(2)}</span>
@@ -189,11 +164,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="space-y-3">
                   <button
                     onClick={() => setSelectedMethod('cash')}
-                    className={`w-full p-4 rounded-lg border-2 transition-colors flex items-center gap-3 ${
-                      selectedMethod === 'cash'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`w-full p-4 rounded-lg border-2 transition-colors flex items-center gap-3 ${selectedMethod === 'cash' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
                   >
                     <Banknote className="w-6 h-6 text-green-600" />
                     <span className="font-medium">Cash</span>
@@ -201,11 +172,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                   <button
                     onClick={() => setSelectedMethod('digital')}
-                    className={`w-full p-4 rounded-lg border-2 transition-colors flex items-center gap-3 ${
-                      selectedMethod === 'digital'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`w-full p-4 rounded-lg border-2 transition-colors flex items-center gap-3 ${selectedMethod === 'digital' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
                   >
                     <Smartphone className="w-6 h-6 text-purple-600" />
                     <span className="font-medium">Gcash</span>

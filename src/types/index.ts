@@ -9,7 +9,6 @@ export interface Transaction {
   id: string;
   items: CartItem[];
   subtotal: number;
-  tax: number;
   total: number;
   paymentMethod: 'cash' | 'digital';
   timestamp: Date;

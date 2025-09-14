@@ -12,7 +12,6 @@ interface ShoppingCartProps {
     items: CartItem[];
     subtotal: number;
     discount: number;
-    tax: number;
     total: number;
     promo: Promotion | null;
     bogoFreeItemId: number | null;
@@ -38,7 +37,6 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   const [selectedBogoId, setSelectedBogoId] = useState<number | null>(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const taxRate = 0.12;
 
   // Load promotions and products
   useEffect(() => {
@@ -207,11 +205,15 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   }
 
   const totalAfterDiscount = subtotal - promoDiscount;
-  const tax = totalAfterDiscount * taxRate;
-  const total = totalAfterDiscount + tax;
+  const total = totalAfterDiscount; // No tax calculation
 
   // Handle checkout with proper BOGO item selection
   const handleCheckoutClick = () => {
+    if (items.length === 0) {
+      alert("Your cart is empty!");
+      return;
+    }
+
     let finalBogoFreeItemId = selectedBogoId;
 
     // If BOGO promo is selected but no free item is chosen, auto-select the first eligible item
@@ -230,7 +232,6 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
       items,
       subtotal,
       discount: promoDiscount,
-      tax,
       total,
       promo: selectedPromo,
       bogoFreeItemId: finalBogoFreeItemId
@@ -240,7 +241,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 flex items-center gap-3">
+      <div className="py-3 px-6 border-b border-gray-200 flex items-center gap-3">
         <CartIcon className="w-6 h-6 text-blue-600" />
         <h2 className="text-lg font-bold text-gray-900">Shopping Cart</h2>
         <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
@@ -249,7 +250,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
       </div>
 
       {/* Items */}
-      <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+      <div className="px-6 py-3 space-y-4 max-h-56 overflow-y-auto">
         {items.map((item) => (
           <div key={item.product.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
             <div className="w-12 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
@@ -297,7 +298,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl space-y-4">
+      <div className="px-6 py-2 border-t border-gray-200 bg-gray-50 rounded-b-xl space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal:</span>
@@ -306,10 +307,6 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Promo Discount:</span>
             <span className="font-medium text-green-600">-₱{promoDiscount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tax (12%):</span>
-            <span className="font-medium">₱{tax.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold border-t border-gray-300 pt-2">
             <span>Total:</span>
@@ -329,25 +326,6 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
             />
           )}
         </div>
-
-        {/* BOGO selection */}
-        {selectedPromo?.type === 'bogo' && bogoEligibleItems.length > 0 && (
-          <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Choose free item:</label>
-            <select
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              value={selectedBogoId || ''}
-              onChange={(e) => setSelectedBogoId(Number(e.target.value) || null)}
-            >
-              <option value="">Select free item...</option>
-              {bogoEligibleItems.map((item) => (
-                <option key={item.product.id} value={item.product.id}>
-                  {item.product.product_name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {/* Checkout */}
         <button
