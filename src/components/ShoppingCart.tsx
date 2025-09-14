@@ -18,11 +18,14 @@ interface ShoppingCartProps {
   }) => void;
 }
 
+
 interface PromoDropdownProps {
   promos: Promotion[];
   selected: Promotion | null; // allow null
   onChange: (promo: Promotion | null) => void; // also allow null
   products: Product[];
+  subtotal: number; // Pass subtotal to evaluate promo eligibility
+  items: CartItem[];
 }
 
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({
@@ -71,7 +74,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   }, [selectedPromo, items, selectedBogoId]);
 
   // --- PromoDropdown component ---
-  const PromoDropdown: React.FC<PromoDropdownProps> = ({ promos, selected, onChange, products }) => {
+  const PromoDropdown: React.FC<PromoDropdownProps> = ({ promos, selected, onChange, products, subtotal, items }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -118,7 +121,19 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
       // Check if promo applies to items in cart
       const cartProductIds = items.map((i) => i.product.id);
-      return promo.products.length === 0 || promo.products.some((id) => cartProductIds.includes(id));
+      if (promo.products.length > 0 && !promo.products.some((id) => cartProductIds.includes(id))) {
+        return false; // If promo is not for any items in the cart, don't show it
+      }
+
+      // Check if cart meets promo requirements for minimum spend and items
+      if (
+        (promo.minimum_spend && subtotal < promo.minimum_spend) || 
+        (promo.minimum_item && items.length < promo.minimum_item)
+      ) {
+        return false; // Exclude promos that don't meet cart requirements
+      }
+
+      return true;
     });
 
     return (
@@ -323,6 +338,8 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               selected={selectedPromo}
               onChange={setSelectedPromo}
               products={products} // for BOGO names
+              subtotal={subtotal}
+              items={items}
             />
           )}
         </div>
